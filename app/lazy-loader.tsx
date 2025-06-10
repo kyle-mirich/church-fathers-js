@@ -95,7 +95,7 @@ export default function LazyLoader() {
             </div>
           </div>
         ) : (
-          <ModernReader data={activeWorkData} showSidebar={false} />
+          <ModernReader data={activeWorkData} />
         )}
       </main>
     </div>
