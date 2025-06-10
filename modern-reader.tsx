@@ -705,17 +705,34 @@ function Chapter({
             <HtmlContent htmlString={contentHtml} />
 
             {chapter.footnotes?.length > 0 && (
-              <div className="mt-8 pt-6 border-t">
-                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <span>Footnotes</span>
-                </h4>
-                <ol className="list-none space-y-2">
-                  {chapter.footnotes.map((fn: any) => (
-                    <Footnote footnote={fn} key={fn.id} />
-                  ))}
-                </ol>
-              </div>
-            )}
+  (() => {
+    const [showFootnotes, setShowFootnotes] = useState(false);
+    return (
+      <div className="mt-8 pt-6 border-t">
+        <button
+          type="button"
+          className="flex items-center gap-2 mb-4 text-lg font-semibold hover:underline focus:outline-none"
+          onClick={() => setShowFootnotes((v) => !v)}
+          aria-expanded={showFootnotes}
+        >
+          {showFootnotes ? (
+            <ChevronDown className="w-5 h-5" />
+          ) : (
+            <ChevronRight className="w-5 h-5" />
+          )}
+          <span>Footnotes ({chapter.footnotes.length})</span>
+        </button>
+        {showFootnotes && (
+          <ol className="list-none space-y-2">
+            {chapter.footnotes.map((fn: any) => (
+              <Footnote footnote={fn} key={fn.id} />
+            ))}
+          </ol>
+        )}
+      </div>
+    );
+  })()
+)}
           </section>
         </CardContent>
       </Card>
