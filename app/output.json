@@ -1,0 +1,24 @@
+{
+  "works": [
+    {
+      "work_title": "Sample Work",
+      "parts": [
+        {
+          "part_title": "Sample Part",
+          "chapters": [
+            {
+              "chapter_title": "Sample Chapter",
+              "content_html": "<p>This is sample content.</p><sup class=\"footnote-ref\" data-note-id=\"1\">1</sup>",
+              "footnotes": [
+                {
+                  "id": "1",
+                  "text_html": "<p>This is a sample footnote.</p>"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
