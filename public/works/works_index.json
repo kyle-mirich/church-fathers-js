@@ -1,0 +1,114 @@
+﻿[
+    {
+        "work_title":  "Title Page",
+        "file":  "work-Title Page.json",
+        "parts":  [
+                      "Preface",
+                      "Introductory Notice"
+                  ]
+    },
+    {
+        "work_title":  "CLEMENT OF ROME",
+        "file":  "work-CLEMENT OF ROME.json",
+        "parts":  [
+                      "Introductory Note to the First Epistle of Clement to the Corinthians",
+                      "First Epistle to the Corinthians"
+                  ]
+    },
+    {
+        "work_title":  "MATHETES",
+        "file":  "work-MATHETES.json",
+        "parts":  [
+                      "Introductory Note to the Epistle of Mathetes to Diognetus",
+                      "Epistle to Diognetus"
+                  ]
+    },
+    {
+        "work_title":  "POLYCARP",
+        "file":  "work-POLYCARP.json",
+        "parts":  [
+                      "Introductory Note to the Epistle of Polycarp to the Philippians",
+                      "Epistle to the Philippians",
+                      "Introductory Note to the Martyrdom of Polycarp",
+                      "The Martyrdom of Polycarp"
+                  ]
+    },
+    {
+        "work_title":  "IGNATIUS",
+        "file":  "work-IGNATIUS.json",
+        "parts":  [
+                      "Introductory Note to the Epistles of Ignatius",
+                      "Epistle to the Ephesians: Shorter and Longer Versions",
+                      "Epistle to the Magnesians: Shorter and Longer Versions",
+                      "Epistle to the Trallians: Shorter and Longer Versions",
+                      "Epistle to the Romans: Shorter and Longer Versions",
+                      "Epistle to the Philadelphians: Shorter and Longer Versions",
+                      "Epistle to the Smyrnæans: Shorter and Longer Versions",
+                      "Epistle to Polycarp: Shorter and Longer Versions",
+                      "Introductory Note to the Syriac Version of the Ignatian Epistles",
+                      "Epistle to Polycarp: Syriac Version",
+                      "Epistle to the Ephesians: Syriac Version",
+                      "Epistle to the Romans: Syriac Version",
+                      "Introductory Note to the Spurious Epistles of Ignatius",
+                      "Epistle to the Tarsians",
+                      "Epistle to the Antiochians",
+                      "Epistle to Hero, a Deacon of Antioch",
+                      "Epistle to the Philippians",
+                      "Epistle from Maria of Cassobelæ",
+                      "Epistle to Mary at Neapolis",
+                      "First Epistle to St John",
+                      "Second Epistle to St John",
+                      "Epistle to Mary the Virgin",
+                      "Epistle from Mary the Virgin",
+                      "Introductory Note to the Martyrdom of Ignatius",
+                      "The Martyrdom of Ignatius"
+                  ]
+    },
+    {
+        "work_title":  "BARNABAS",
+        "file":  "work-BARNABAS.json",
+        "parts":  [
+                      "Introductory Note to the Epistle of Barnabas",
+                      "The Epistle of Barnabas"
+                  ]
+    },
+    {
+        "work_title":  "PAPIAS",
+        "file":  "work-PAPIAS.json",
+        "parts":  [
+                      "Introductory Note to the Fragments of Papias",
+                      "Fragments"
+                  ]
+    },
+    {
+        "work_title":  "JUSTIN MARTYR",
+        "file":  "work-JUSTIN MARTYR.json",
+        "parts":  [
+                      "Introductory Note to the Writings of Justin Martyr",
+                      "The First Apology",
+                      "The Second Apology",
+                      "Dialogue with Trypho",
+                      "The Discourse to the Greeks",
+                      "Hortatory Address to the Greeks",
+                      "On the Sole Government of God",
+                      "On the Resurrection, Fragments",
+                      "Other Fragments from the Lost Writings of Justin",
+                      "Introductory Note to the Martyrdom of Justin Martyr",
+                      "The Martyrdom of Justin Martyr"
+                  ]
+    },
+    {
+        "work_title":  "IRENÆUS",
+        "file":  "work-IRENÆUS.json",
+        "parts":  [
+                      "Introductory Note to Irenæus Against Heresies",
+                      "Against Heresies: Book I",
+                      "Against Heresies: Book II",
+                      "Against Heresies: Book III",
+                      "Elucidation",
+                      "Against Heresies: Book IV",
+                      "Against Heresies: Book V",
+                      "Fragments from the Lost Writings of Irenæus"
+                  ]
+    }
+]
