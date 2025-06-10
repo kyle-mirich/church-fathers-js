@@ -64,6 +64,7 @@ function injectFootnotes(contentHtml: string, footnotes: any[]) {
   }, {});
   
   // Replace each <sup class="footnote-ref" data-note-id="X">X</sup> with a hoverable link
+  // Use the actual footnote ID as the display number instead of resetting
   return contentHtml.replace(/<sup class=\"footnote-ref\" data-note-id=\"(\d+)\">(\d+)<\/sup>/g, (match, id, number) => {
     const fn = footnoteMap[id];
     if (!fn) return match;
@@ -75,7 +76,7 @@ function injectFootnotes(contentHtml: string, footnotes: any[]) {
         class="footnote-link text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 cursor-pointer"
         data-footnote-id="${id}"
         data-footnote-content="${encodeURIComponent(fn.text_html)}"
-      >[${number}]</a>
+      >[${id}]</a>
     `;
   });
 }
@@ -208,11 +209,11 @@ function Chapter({ chapter }: { chapter: any }) {
         {chapter.footnotes && chapter.footnotes.length > 0 && (
           <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h4 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">Footnotes</h4>
-            <ol className="list-decimal pl-5 text-base">
+            <ul className="list-none pl-0 text-base">
               {chapter.footnotes.map((fn: any) => (
                 <Footnote footnote={fn} key={fn.id} />
               ))}
-            </ol>
+            </ul>
           </div>
         )}
         
