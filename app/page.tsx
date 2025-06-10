@@ -1,5 +1,4 @@
-import ModernReader from "../modern-reader"
-import dataJson from "../output.json"
+import LazyLoader from "./lazy-loader"
 
 // Type your data structure (adjust based on your actual JSON structure)
 interface Chapter {
@@ -26,8 +25,5 @@ interface ReaderData {
 }
 
 export default function Page() {
-  // Cast your imported JSON to the expected type
-  const data = dataJson as ReaderData
-
-  return <ModernReader data={data} />
+  return <LazyLoader />
 }
