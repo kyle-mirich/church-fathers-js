@@ -331,41 +331,43 @@ function Chapter({ chapter, workTitle, partTitle }: { chapter: any; workTitle: s
   
   // Add event listeners for footnote hover
   useEffect(() => {
-    const handleMouseEnter = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains('footnote-link')) {
-        const footnoteId = target.getAttribute('data-footnote-id');
-        if (footnoteId && footnoteMap[footnoteId]) {
-          const rect = target.getBoundingClientRect();
-          setTooltipPosition({
-            x: rect.left + rect.width / 2,
-            y: rect.top
-          });
-          setHoveredFootnote(footnoteMap[footnoteId]);
-        }
-      }
-    };
-    
-    const handleMouseLeave = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains('footnote-link')) {
-        setHoveredFootnote(null);
-      }
-    };
-    
     const chapterElement = chapterRef.current;
-    if (chapterElement) {
-      chapterElement.addEventListener('mouseenter', handleMouseEnter, true);
-      chapterElement.addEventListener('mouseleave', handleMouseLeave, true);
-      
-      return () => {
-        chapterElement.removeEventListener('mouseenter', handleMouseEnter, true);
-        chapterElement.removeEventListener('mouseleave', handleMouseLeave, true);
-      };
-    }
-  }, [footnoteMap]);
-  
-  // Add CSS for footnotes
+    if (!chapterElement) return; // Ensure chapterElement exists
+
+    const handleMouseEnter = (e: MouseEvent) => {
+      const target = e.currentTarget as HTMLElement; // Use currentTarget
+      const footnoteId = target.getAttribute('data-footnote-id');
+      if (footnoteId && footnoteMap[footnoteId]) {
+        const rect = target.getBoundingClientRect();
+        setTooltipPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top
+        });
+        setHoveredFootnote(footnoteMap[footnoteId]);
+      }
+    };
+    
+    const handleMouseLeave = () => { // No need for 'e' here unless you need target
+      setHoveredFootnote(null);
+    };
+    
+    // Select all footnote links within the current chapter
+    const footnoteLinks = chapterElement.querySelectorAll('.footnote-link');
+
+    footnoteLinks.forEach(link => {
+      link.addEventListener('mouseenter', handleMouseEnter);
+      link.addEventListener('mouseleave', handleMouseLeave);
+    });
+    
+    return () => {
+      footnoteLinks.forEach(link => {
+        link.removeEventListener('mouseenter', handleMouseEnter);
+        link.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }, [chapter.footnotes, footnoteMap]); // Re-run effect if footnotes or map changes
+
+  // Add CSS for footnotes (this can remain as is, it's global styling)
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
