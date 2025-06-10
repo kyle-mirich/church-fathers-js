@@ -454,7 +454,7 @@ function Sidebar({ data }: { data: { works: any[] } }) {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col w-full overflow-hidden">
       <div className="p-4 border-b">
         <div className="flex items-center gap-2 mb-2">
           <BookOpen className="w-5 h-5 text-primary" />
@@ -462,8 +462,12 @@ function Sidebar({ data }: { data: { works: any[] } }) {
         </div>
       </div>
 
-      <SettingsPanel />
-      <SearchPanel />
+      <div className="w-full max-w-full">
+        <SettingsPanel />
+      </div>
+      <div className="w-full max-w-full">
+        <SearchPanel />
+      </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         <nav className="space-y-2">
@@ -585,15 +589,20 @@ const FootnoteTooltip = forwardRef<
 >(({ footnote, isVisible, position, onClose }, ref) => {
   if (!isVisible) return null
 
+  const transformStyle = position.y < 160 ? "translate(-50%, 10px)" : "translate(-50%, -100%)"
+  // Clamp horizontal position within viewport with 20px padding
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1024
+  const clampedX = Math.min(Math.max(position.x, 20), viewportWidth - 20)
+
   return (
     <Card
       ref={ref}
       className="fixed z-50 max-w-sm shadow-lg"
       style={{
-        left: `${position.x}px`,
+        left: `${clampedX}px`,
         top: `${position.y}px`,
-        transform: "translate(-50%, -100%)",
-        marginTop: "-10px",
+        transform: transformStyle,
+        marginTop: transformStyle.includes("-100%") ? "-10px" : "10px",
       }}
     >
       <CardContent className="p-4">
@@ -637,6 +646,7 @@ function Chapter({
 }) {
   const [activeFootnote, setActiveFootnote] = useState<any>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [showFootnotes, setShowFootnotes] = useState(false)
   const chapterRef = useRef<HTMLElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
 
@@ -705,34 +715,29 @@ function Chapter({
             <HtmlContent htmlString={contentHtml} />
 
             {chapter.footnotes?.length > 0 && (
-  (() => {
-    const [showFootnotes, setShowFootnotes] = useState(false);
-    return (
-      <div className="mt-8 pt-6 border-t">
-        <button
-          type="button"
-          className="flex items-center gap-2 mb-4 text-lg font-semibold hover:underline focus:outline-none"
-          onClick={() => setShowFootnotes((v) => !v)}
-          aria-expanded={showFootnotes}
-        >
-          {showFootnotes ? (
-            <ChevronDown className="w-5 h-5" />
-          ) : (
-            <ChevronRight className="w-5 h-5" />
-          )}
-          <span>Footnotes ({chapter.footnotes.length})</span>
-        </button>
-        {showFootnotes && (
-          <ol className="list-none space-y-2">
-            {chapter.footnotes.map((fn: any) => (
-              <Footnote footnote={fn} key={fn.id} />
-            ))}
-          </ol>
-        )}
-      </div>
-    );
-  })()
-)}
+              <div className="mt-8 pt-6 border-t">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 mb-4 text-lg font-semibold hover:underline focus:outline-none"
+                  onClick={() => setShowFootnotes((v) => !v)}
+                  aria-expanded={showFootnotes}
+                >
+                  {showFootnotes ? (
+                    <ChevronDown className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
+                  <span>Footnotes ({chapter.footnotes.length})</span>
+                </button>
+                {showFootnotes && (
+                  <ol className="list-none space-y-2">
+                    {chapter.footnotes.map((fn: any) => (
+                      <Footnote footnote={fn} key={fn.id} />
+                    ))}
+                  </ol>
+                )}
+              </div>
+            )}
           </section>
         </CardContent>
       </Card>
@@ -795,7 +800,13 @@ function Work({ work }: { work: any }) {
 }
 
 // Main Component
-export default function ModernReader({ data }: { data: { works: any[] } }) {
+export default function ModernReader({
+  data,
+  showSidebar = true,
+}: {
+  data: { works: any[] }
+  showSidebar?: boolean
+}) {
   return (
     <SettingsProvider>
       <SearchProvider data={data}>
@@ -815,23 +826,30 @@ export default function ModernReader({ data }: { data: { works: any[] } }) {
           `}</style>
 
           <div className="flex h-screen">
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex w-80 border-r bg-card">
-              <Sidebar data={data} />
-            </aside>
+            {showSidebar && (
+              <>
+                {/* Desktop Sidebar */}
+                <aside className="hidden lg:flex w-80 flex-shrink-0 border-r bg-card">
+                  <Sidebar data={data} />
+                </aside>
 
-            {/* Mobile Sidebar */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="fixed top-4 left-4 z-40 lg:hidden">
-                  <Menu className="w-4 h-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
-                <Sidebar data={data} />
-              </SheetContent>
-            </Sheet>
-
+                {/* Mobile Sidebar */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="fixed top-4 left-4 z-40 lg:hidden"
+                    >
+                      <Menu className="w-4 h-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-80 p-0">
+                    <Sidebar data={data} />
+                  </SheetContent>
+                </Sheet>
+              </>
+            )}
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
               <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 pt-16 lg:pt-8">
