@@ -63,41 +63,4 @@ export default function LazyLoader() {
     )
   }
 
-  return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="w-80 border-r bg-card h-full flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="font-bold text-lg">Works</h2>
-        </div>
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {worksIndex.map((work, idx) => (
-            <button
-              key={work.work_title}
-              className={`block w-full text-left px-3 py-2 rounded hover:bg-muted ${
-                activeWork?.work_title === work.work_title ? "bg-muted font-bold" : ""
-              }`}
-              onClick={() => setActiveWork(work)}
-              disabled={activeWork?.work_title === work.work_title}
-            >
-              {work.work_title}
-            </button>
-          ))}
-        </nav>
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {loading || !activeWorkData ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Loading...</p>
-            </div>
-          </div>
-        ) : (
-          <ModernReader data={activeWorkData} />
-        )}
-      </main>
-    </div>
-  )
 }

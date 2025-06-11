@@ -1,4 +1,4 @@
-import LazyLoader from "./lazy-loader"
+import ReaderWithSidebar from "./reader-with-sidebar"
 
 // Type your data structure (adjust based on your actual JSON structure)
 interface Chapter {
@@ -25,5 +25,5 @@ interface ReaderData {
 }
 
 export default function Page() {
-  return <LazyLoader />
+  return <ReaderWithSidebar />
 }
