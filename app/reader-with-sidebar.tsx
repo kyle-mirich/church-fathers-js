@@ -23,42 +23,33 @@ export interface WorkIndexEntry {
 
 export default function ReaderWithSidebar() {
   const [worksIndex, setWorksIndex] = useState<WorkIndexEntry[]>([])
-  const [activeWork, setActiveWork] = useState<WorkIndexEntry | null>(null)
-  const [activeWorkData, setActiveWorkData] = useState<any | null>(null)
+  const [allWorksData, setAllWorksData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch the works index once on mount.
+  // Fetch the works index and all works' JSON on mount.
   useEffect(() => {
+    setLoading(true)
     fetch("/works/works_index.json")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load works index")
         return res.json()
       })
-      .then((data: WorkIndexEntry[]) => {
+      .then(async (data: WorkIndexEntry[]) => {
         setWorksIndex(data)
-        // Automatically select the Title Page if it exists, otherwise the first work.
-        const initial =
-          data.find((w) => w.work_title === "Title Page") ?? data[0] ?? null
-        setActiveWork(initial)
+        // Fetch all works' JSON in parallel
+        const worksData = await Promise.all(
+          data.map(async (w) => {
+            const res = await fetch(`/works/${w.file}`)
+            if (!res.ok) throw new Error(`Failed to load work: ${w.file}`)
+            return res.json()
+          })
+        )
+        setAllWorksData(worksData)
       })
-      .catch((err) => setError(err.message))
-  }, [])
-
-  // Whenever the active work changes, fetch its JSON.
-  useEffect(() => {
-    if (!activeWork) return
-    setLoading(true)
-    setError(null)
-    fetch(`/works/${activeWork.file}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load work data")
-        return res.json()
-      })
-      .then((data) => setActiveWorkData({ works: [data] }))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [activeWork])
+  }, [])
 
   // Render error state
   if (error) {
@@ -82,7 +73,7 @@ export default function ReaderWithSidebar() {
     <SidebarProvider className="min-h-screen w-full">
       {/* Main reading pane only */}
       <SidebarInset className="w-full">
-        {loading || !activeWorkData ? (
+        {loading || allWorksData.length === 0 ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -90,7 +81,7 @@ export default function ReaderWithSidebar() {
             </div>
           </div>
         ) : (
-          <ModernReader data={activeWorkData} />
+          <ModernReader data={{ works: allWorksData }} />
         )}
       </SidebarInset>
     </SidebarProvider>
