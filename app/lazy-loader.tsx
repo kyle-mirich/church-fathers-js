@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import ModernReader from "../modern-reader"
 import { Card, CardContent } from "@/components/ui/card"
+import { LoadingSpinner, ErrorDisplay } from "@/components/ui/loading"
 
 export interface WorkIndexEntry {
   work_title: string
@@ -49,19 +50,7 @@ export default function LazyLoader() {
   }, [activeWork])
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    )
+    return <ErrorDisplay error={error} onRetry={() => window.location.reload()} />
   }
 
   // Sidebar navigation using worksIndex
@@ -72,7 +61,7 @@ export default function LazyLoader() {
           <h2 className="font-bold text-lg">Contents</h2>
         </div>
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {worksIndex.map((work, idx) => (
+          {worksIndex.map((work) => (
             <button
               key={work.work_title}
               className={`w-full text-left px-3 py-2 rounded hover:bg-accent transition-colors ${activeWork?.work_title === work.work_title ? "bg-accent font-bold" : ""}`}
@@ -92,12 +81,7 @@ export default function LazyLoader() {
       <SidebarList />
       <main className="flex-1">
         {loading || !activeWorkData ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Loading...</p>
-            </div>
-          </div>
+          <LoadingSpinner />
         ) : (
           <ModernReader data={{ works: [activeWorkData] }} />
         )}
