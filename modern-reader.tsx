@@ -148,9 +148,9 @@ function SearchProvider({ children, data }: { children: ReactNode; data: { works
     const results: SearchResult[] = []
     const searchTerms = query.toLowerCase().split(/\s+/)
 
-    data.works?.forEach((work) => {
-      work.parts?.forEach((part) => {
-        part.chapters?.forEach((chapter) => {
+    data.works?.forEach((work: any) => {
+      work.parts?.forEach((part: any) => {
+        part.chapters?.forEach((chapter: any) => {
           const content = chapter.content_html || ""
           const textContent = content
             .replace(/<[^>]*>/g, " ")
@@ -487,7 +487,7 @@ function Sidebar({ data }: { data: { works: any[] } }) {
                 </div>
 
                 {isWorkExpanded &&
-                  work.parts?.map((part, partIdx) => {
+                  work.parts?.map((part: any, partIdx: number) => {
                     const partId = generateId(`${work.work_title}-${part.part_title}`)
                     const partKey = `${workIdx}-${partIdx}`
                     const isPartExpanded = expandedPart === partKey
@@ -504,7 +504,7 @@ function Sidebar({ data }: { data: { works: any[] } }) {
                         </div>
 
                         {isPartExpanded &&
-                          part.chapters?.map((chapter, chapterIdx) => {
+                          part.chapters?.map((chapter: any, chapterIdx: number) => {
                             const chapterId = generateId(
                               `${work.work_title}-${part.part_title}-${chapter.chapter_title}`,
                             )
