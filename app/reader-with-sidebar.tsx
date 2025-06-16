@@ -11,6 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { BookOpen, ChevronRight, ChevronDown, Settings, Search, X, Sun, Moon, Type, Minus, Plus, FileText, ArrowRight, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { NotesProvider, useContextNotes, useContextHighlights } from "@/lib/notes-provider"
+import { getCurrentSelection, applyHighlight, clearSelection, type TextSelection } from "@/lib/text-selection"
+import { TextSelectionToolbar } from "@/components/note-taking/text-selection-toolbar"
+import { NoteDialog } from "@/components/note-taking/note-dialog"
+import { NotesPanel } from "@/components/note-taking/notes-panel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DataManagementDialog } from "@/components/data-management"
 
 // Re-use the sidebar primitives that already exist in the UI library.
 import {
@@ -174,15 +181,18 @@ function WorkSidebar({
   worksIndex, 
   selectedWorkIndex, 
   onSelectWork,
-  selectedWorkData 
+  selectedWorkData,
+  searchQuery,
+  setSearchQuery
 }: {
   worksIndex: WorkIndexEntry[]
   selectedWorkIndex: number
   onSelectWork: (index: number) => void
   selectedWorkData: any | null
+  searchQuery: string
+  setSearchQuery: (query: string) => void
 }) {
   const [expandedPart, setExpandedPart] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
   const [searchScope, setSearchScope] = useState<"all" | "current">("all")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -328,25 +338,45 @@ function WorkSidebar({
     return () => clearTimeout(timeoutId)
   }, [searchQuery, searchScope, selectedWorkData])
 
+  // Use notes and highlights for the sidebar
+  const { notes, deleteNote, updateNote } = useContextNotes()
+  const { highlights, deleteHighlight } = useContextHighlights()
+  const [editingNote, setEditingNote] = useState<any>(null)
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false)
+
+  // Handle note editing
+  const handleEditNote = (note: any) => {
+    setEditingNote(note)
+    setNoteDialogOpen(true)
+  }
+
+  // Handle note saving (create or update)
+  const handleSaveNote = async (noteData: any) => {
+    if (editingNote) {
+      const result = await updateNote(editingNote.id, noteData)
+      if (result) {
+        setEditingNote(null)
+        setNoteDialogOpen(false)
+      }
+      return result
+    }
+    return null
+  }
+
   return (
     <div className="h-full flex flex-col w-full overflow-hidden">
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-bold text-lg">Works</h2>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSearch(!showSearch)}
-              className="p-2"
-            >
-              <Search className="w-4 h-4" />
-            </Button>
-            <SettingsDialog />
-          </div>
+      <div className="p-2 border-b">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2"
+          >
+            <Search className="w-4 h-4" />
+          </Button>
+          <SettingsDialog />
+          <DataManagementDialog />
         </div>
         
         {showSearch && (
@@ -427,86 +457,275 @@ function WorkSidebar({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-2 mb-4">
-          {worksIndex.map((work, index) => (
-            <Button
-              key={index}
-              variant={selectedWorkIndex === index ? "secondary" : "ghost"}
-              onClick={() => onSelectWork(index)}
-              className="w-full justify-start text-left h-auto py-3 px-3"
-            >
-              <span className="truncate font-medium">{work.work_title}</span>
-            </Button>
-          ))}
-        </div>
-
-        {selectedWorkData && (
-          <>
-            <div className="border-t pt-4 mt-4">
-              <h3 className="font-semibold text-sm text-muted-foreground mb-3">Contents</h3>
-              <nav className="space-y-2">
-                {selectedWorkData.parts?.map((part: any, partIdx: number) => {
-                  const partId = generateId(`${selectedWorkData.work_title}-${part.part_title}`)
-                  const partKey = `${selectedWorkIndex}-${partIdx}`
-                  const isPartExpanded = expandedPart === partKey
-
-                  return (
-                    <div key={partKey} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Button
-                          variant="ghost"
-                          onClick={() => scrollToElement(partId)}
-                          className="flex-1 justify-start text-left h-auto py-2 px-2 text-sm"
-                        >
-                          <span className="truncate">{part.part_title}</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setExpandedPart(isPartExpanded ? null : partKey)}
-                          className="p-1 h-auto"
-                        >
-                          {isPartExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-
-                      {isPartExpanded &&
-                        part.chapters?.map((chapter: any, chapterIdx: number) => {
-                          const chapterId = generateId(
-                            `${selectedWorkData.work_title}-${part.part_title}-${chapter.chapter_title}`
-                          )
-                          return (
-                            <div key={chapterIdx} className="ml-4">
-                              <Button
-                                variant="ghost"
-                                onClick={() => scrollToElement(chapterId)}
-                                className="w-full justify-start text-left h-auto py-1 px-2 text-xs"
-                              >
-                                <span className="truncate text-muted-foreground">{chapter.chapter_title}</span>
-                              </Button>
-                            </div>
-                          )
-                        })}
-                    </div>
-                  )
-                })}
-              </nav>
+      <div className="flex-1 overflow-hidden">
+        <Tabs defaultValue="works" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mx-2">
+            <TabsTrigger value="works">Works</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="works" className="flex-1 overflow-y-auto p-4 m-0">
+            <div className="space-y-2 mb-4">
+              {worksIndex.map((work, index) => (
+                <Button
+                  key={index}
+                  variant={selectedWorkIndex === index ? "secondary" : "ghost"}
+                  onClick={() => onSelectWork(index)}
+                  className="w-full justify-start text-left h-auto py-3 px-3"
+                >
+                  <span className="truncate font-medium">{work.work_title}</span>
+                </Button>
+              ))}
             </div>
-          </>
-        )}
+
+            {selectedWorkData && (
+              <>
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">Contents</h3>
+                  <nav className="space-y-2">
+                    {selectedWorkData.parts?.map((part: any, partIdx: number) => {
+                      const partId = generateId(`${selectedWorkData.work_title}-${part.part_title}`)
+                      const partKey = `${selectedWorkIndex}-${partIdx}`
+                      const isPartExpanded = expandedPart === partKey
+
+                      return (
+                        <div key={partKey} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <Button
+                              variant="ghost"
+                              onClick={() => scrollToElement(partId)}
+                              className="flex-1 justify-start text-left h-auto py-2 px-2 text-sm"
+                            >
+                              <span className="truncate">{part.part_title}</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpandedPart(isPartExpanded ? null : partKey)}
+                              className="p-1 h-auto"
+                            >
+                              {isPartExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+
+                          {isPartExpanded &&
+                            part.chapters?.map((chapter: any, chapterIdx: number) => {
+                              const chapterId = generateId(
+                                `${selectedWorkData.work_title}-${part.part_title}-${chapter.chapter_title}`
+                              )
+                              return (
+                                <div key={chapterIdx} className="ml-4">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => scrollToElement(chapterId)}
+                                    className="w-full justify-start text-left h-auto py-1 px-2 text-xs"
+                                  >
+                                    <span className="truncate text-muted-foreground">{chapter.chapter_title}</span>
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                        </div>
+                      )
+                    })}
+                  </nav>
+                </div>
+              </>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="notes" className="flex-1 m-0">
+            <NotesPanel
+              notes={notes}
+              highlights={highlights}
+              onEditNote={handleEditNote}
+              onDeleteNote={deleteNote}
+              onDeleteHighlight={deleteHighlight}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Note Edit Dialog */}
+      <NoteDialog
+        open={noteDialogOpen}
+        onOpenChange={(open) => {
+          setNoteDialogOpen(open)
+          if (!open) setEditingNote(null)
+        }}
+        onSave={handleSaveNote}
+        workTitle={selectedWorkData?.work_title || ''}
+        partTitle={selectedWorkData?.parts?.[0]?.part_title}
+        chapterTitle={selectedWorkData?.parts?.[0]?.chapters?.[0]?.chapter_title || ''}
+        existingNote={editingNote}
+      />
     </div>
   )
 }
 
 // ModernReaderContent component that uses settings
-function ModernReaderContent({ data }: { data: { works: any[] } }) {
+function ModernReaderContent({ data, searchQuery = "" }: { data: { works: any[] }, searchQuery?: string }) {
   const { fontSize } = useSettings()
+  const [selectedText, setSelectedText] = useState<any>(null)
+  const [selectionPosition, setSelectionPosition] = useState({ x: 0, y: 0 })
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false)
+  const [currentSelection, setCurrentSelection] = useState<any>(null)
+  
+  // Get work info for note-taking
+  const currentWork = data.works?.[0]
+  const workTitle = currentWork?.work_title || ''
+  
+  // Use notes and highlights hooks
+  const { createNote } = useContextNotes()
+  const { createHighlight, highlights } = useContextHighlights()
+
+  // Restore highlights when content loads
+  useEffect(() => {
+    if (highlights.length > 0 && data.works?.length > 0) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        highlights.forEach(highlight => {
+          const container = highlight.elementId 
+            ? document.getElementById(highlight.elementId)
+            : document.body
+          
+          if (container) {
+            applyHighlight(container, {
+              id: highlight.id,
+              text: highlight.selectedText,
+              startOffset: highlight.selectionStart,
+              endOffset: highlight.selectionEnd,
+              color: highlight.color,
+              elementId: highlight.elementId,
+              xpath: highlight.xpath
+            })
+          }
+        })
+      }, 500)
+    }
+  }, [highlights, data.works])
+
+  // Handle text selection
+  const handleTextSelection = () => {
+    const selection = getCurrentSelection()
+    if (selection && selection.text.length > 0) {
+      setCurrentSelection(selection)
+      setSelectionPosition({
+        x: window.innerWidth / 2, // Center horizontally
+        y: window.scrollY + 100 // Position below scroll
+      })
+      setSelectedText(selection)
+    } else {
+      setSelectedText(null)
+      setCurrentSelection(null)
+    }
+  }
+
+  // Handle creating a note from selection
+  const handleCreateNoteFromSelection = (selection: TextSelection) => {
+    setCurrentSelection(selection)
+    setNoteDialogOpen(true)
+    setSelectedText(null)
+  }
+
+  // Handle creating a highlight from selection
+  const handleCreateHighlightFromSelection = async (selection: TextSelection, color: string) => {
+    if (!currentWork) return
+
+    const chapterTitle = findChapterForSelection(selection)
+    if (!chapterTitle) return
+
+    const highlightData = {
+      workTitle,
+      partTitle: findPartForSelection(selection),
+      chapterTitle,
+      selectedText: selection.text,
+      color,
+      selectionStart: selection.startOffset,
+      selectionEnd: selection.endOffset,
+      elementId: selection.elementId,
+      xpath: selection.xpath
+    }
+
+    const newHighlight = await createHighlight(highlightData)
+    if (newHighlight) {
+      // Apply visual highlight
+      const container = selection.elementId 
+        ? document.getElementById(selection.elementId)
+        : document.body
+      
+      if (container) {
+        applyHighlight(container, {
+          id: newHighlight.id,
+          text: selection.text,
+          startOffset: selection.startOffset,
+          endOffset: selection.endOffset,
+          color,
+          elementId: selection.elementId,
+          xpath: selection.xpath
+        })
+      }
+    }
+    setSelectedText(null)
+  }
+
+  // Find chapter title for a selection
+  const findChapterForSelection = (selection: TextSelection): string => {
+    if (!selection.elementId) return ''
+    
+    const element = document.getElementById(selection.elementId)
+    if (!element) return ''
+    
+    // Look for the closest chapter title
+    let current: Element | null = element
+    while (current) {
+      const chapterId = current.id
+      if (chapterId && chapterId.includes('-')) {
+        const parts = chapterId.split('-')
+        if (parts.length >= 3) {
+          return parts.slice(2).join(' ').replace(/-/g, ' ')
+        }
+      }
+      current = current.parentElement
+    }
+    return ''
+  }
+
+  // Find part title for a selection
+  const findPartForSelection = (selection: TextSelection): string => {
+    if (!selection.elementId) return ''
+    
+    const element = document.getElementById(selection.elementId)
+    if (!element) return ''
+    
+    // Look for the closest part title
+    let current: Element | null = element
+    while (current) {
+      const partId = current.id
+      if (partId && partId.includes('-')) {
+        const parts = partId.split('-')
+        if (parts.length >= 2) {
+          return parts[1].replace(/-/g, ' ')
+        }
+      }
+      current = current.parentElement
+    }
+    return ''
+  }
+
+  // Handle note creation
+  const handleCreateNote = async (noteData: any) => {
+    const result = await createNote(noteData)
+    if (result) {
+      setCurrentSelection(null)
+      return result
+    }
+    return null
+  }
 
   const generateId = (text: string) => {
     return text
@@ -515,13 +734,34 @@ function ModernReaderContent({ data }: { data: { works: any[] } }) {
       .replace(/^-+|-+$/g, "")
   }
 
+  // Function to highlight search terms in HTML content
+  const highlightSearchTerms = (htmlString: string): string => {
+    if (!searchQuery.trim()) return htmlString
+    
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(term => term.length >= 2)
+    if (searchTerms.length === 0) return htmlString
+    
+    let highlighted = htmlString
+    searchTerms.forEach((term) => {
+      const regex = new RegExp(`(${term})`, "gi")
+      highlighted = highlighted.replace(
+        regex,
+        '<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded font-medium">$1</mark>'
+      )
+    })
+    
+    return highlighted
+  }
+
   // HTML Content Component
   function HtmlContent({ htmlString }: { htmlString: string }) {
+    const highlightedContent = highlightSearchTerms(htmlString)
+    
     return (
       <div
         className="prose dark:prose-invert max-w-none leading-relaxed"
         style={{ fontSize: `${fontSize}px`, lineHeight: 1.7 }}
-        dangerouslySetInnerHTML={{ __html: htmlString }}
+        dangerouslySetInnerHTML={{ __html: highlightedContent }}
       />
     )
   }
@@ -633,14 +873,18 @@ function ModernReaderContent({ data }: { data: { works: any[] } }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div 
+      className="min-h-screen bg-background text-foreground"
+      onMouseUp={handleTextSelection}
+      onTouchEnd={handleTextSelection}
+    >
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
           <header className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">Ante-Nicene Fathers, Vol. 1</h1>
             <p className="text-lg text-muted-foreground mb-2">Early Christian Writings</p>
             <p className="text-sm text-muted-foreground">
-              Use the sidebar to navigate and search through the texts.
+              Use the sidebar to navigate and search through the texts. Select text to create notes and highlights.
             </p>
           </header>
 
@@ -657,6 +901,28 @@ function ModernReaderContent({ data }: { data: { works: any[] } }) {
           </section>
         </div>
       </main>
+
+      {/* Text Selection Toolbar */}
+      {selectedText && (
+        <TextSelectionToolbar
+          selection={selectedText}
+          position={selectionPosition}
+          onCreateNote={handleCreateNoteFromSelection}
+          onCreateHighlight={handleCreateHighlightFromSelection}
+          onClose={() => setSelectedText(null)}
+        />
+      )}
+
+      {/* Note Creation Dialog */}
+      <NoteDialog
+        open={noteDialogOpen}
+        onOpenChange={setNoteDialogOpen}
+        onSave={handleCreateNote}
+        workTitle={workTitle}
+        partTitle={currentWork?.parts?.[0]?.part_title}
+        chapterTitle={currentWork?.parts?.[0]?.chapters?.[0]?.chapter_title || ''}
+        selection={currentSelection}
+      />
     </div>
   )
 }
@@ -748,37 +1014,81 @@ export default function ReaderWithSidebar() {
   return (
     <SettingsProvider>
       <SidebarProvider className="min-h-screen w-full">
-        {/* Sidebar */}
-        <div className="w-80 border-r bg-card">
-          {worksIndex.length > 0 && (
-            <WorkSidebar 
-              worksIndex={worksIndex}
-              selectedWorkIndex={selectedWorkIndex}
-              onSelectWork={loadWork}
-              selectedWorkData={selectedWorkData}
-            />
-          )}
+        <div className="flex h-screen">
+          {/* Sidebar */}
+          <div className={`border-r bg-card transition-all duration-300 ${sidebarCollapsed ? 'w-12' : 'w-80'}`}>
+            {sidebarCollapsed ? (
+              <div className="h-full flex flex-col items-center py-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSidebar}
+                  className="p-2 mb-4"
+                  title="Expand Sidebar"
+                >
+                  <PanelLeftOpen className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    <h2 className="font-bold text-lg">Works</h2>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSidebar}
+                    className="p-2"
+                    title="Collapse Sidebar"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                  </Button>
+                </div>
+                {worksIndex.length > 0 && (
+                  <NotesProvider workTitle={selectedWorkData?.work_title}>
+                    <WorkSidebar 
+                      worksIndex={worksIndex}
+                      selectedWorkIndex={selectedWorkIndex}
+                      onSelectWork={loadWork}
+                      selectedWorkData={selectedWorkData}
+                      searchQuery={searchQuery}
+                      setSearchQuery={setSearchQuery}
+                    />
+                  </NotesProvider>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Main reading pane */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p>Loading...</p>
+                </div>
+              </div>
+            ) : selectedWorkData ? (
+              <NotesProvider workTitle={selectedWorkData?.work_title}>
+                <ModernReaderContent 
+                  data={{ works: [selectedWorkData] }} 
+                  searchQuery={searchQuery}
+                />
+              </NotesProvider>
+            ) : (
+              <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="text-center">
+                  <p className="text-muted-foreground">
+                    {sidebarCollapsed ? "Expand the sidebar to select a work to begin reading." : "Select a work from the sidebar to begin reading."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        
-        {/* Main reading pane */}
-        <SidebarInset className="flex-1">
-          {loading ? (
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p>Loading...</p>
-              </div>
-            </div>
-          ) : selectedWorkData ? (
-            <ModernReaderContent data={{ works: [selectedWorkData] }} />
-          ) : (
-            <div className="min-h-screen flex items-center justify-center p-4">
-              <div className="text-center">
-                <p className="text-muted-foreground">Select a work from the sidebar to begin reading.</p>
-              </div>
-            </div>
-          )}
-        </SidebarInset>
       </SidebarProvider>
     </SettingsProvider>
   )

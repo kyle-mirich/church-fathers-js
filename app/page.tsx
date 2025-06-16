@@ -1,4 +1,4 @@
-import ReaderWithSidebar from "./reader-with-sidebar"
+import SimpleReader from "./simple-reader"
 
 // Type your data structure (adjust based on your actual JSON structure)
 interface Chapter {
@@ -25,5 +25,5 @@ interface ReaderData {
 }
 
 export default function Page() {
-  return <ReaderWithSidebar />
+  return <SimpleReader data={{ works: [] }} />
 }

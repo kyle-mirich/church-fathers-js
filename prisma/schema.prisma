@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for note ownership
+model User {
+  id        String   @id @default(cuid())
+  sessionId String   @unique // For anonymous users, we'll use session-based identification
+  name      String?  
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  notes           Note[]
+  highlights      Highlight[]
+  readingProgress ReadingProgress[]
+  studySessions   StudySession[]
+
+  @@map("users")
+}
+
+// Note model for storing user annotations
+model Note {
+  id          String   @id @default(cuid())
+  userId      String
+  
+  // Content location identifiers
+  workTitle     String
+  partTitle     String?
+  chapterTitle  String
+  
+  // Note content
+  title         String?
+  content       String   // The actual note content (rich text/markdown)
+  noteType      NoteType @default(GENERAL)
+  
+  // Text selection info (if note is linked to specific text)
+  selectedText  String?  // The actual selected text
+  selectionStart Int?    // Character position start
+  selectionEnd   Int?    // Character position end
+  elementId     String?  // DOM element ID for more precise positioning
+  
+  // Metadata
+  isPublic      Boolean  @default(false)
+  tags          String   @default("[]") // JSON string of tags for organization
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  highlights    Highlight[] // A note can have associated highlights
+
+  @@map("notes")
+  @@index([userId])
+  @@index([workTitle, chapterTitle])
+}
+
+// Highlight model for text highlighting
+model Highlight {
+  id          String      @id @default(cuid())
+  userId      String
+  noteId      String?     // Optional - highlight can exist without a note
+  
+  // Content location identifiers
+  workTitle     String
+  partTitle     String?
+  chapterTitle  String
+  
+  // Highlight details
+  selectedText  String      // The highlighted text
+  color         HighlightColor @default(YELLOW)
+  
+  // Position information for recreating highlights
+  selectionStart Int        // Character position start
+  selectionEnd   Int        // Character position end
+  elementId     String?     // DOM element ID for precise positioning
+  xpath         String?     // XPath for more robust positioning
+  
+  // Metadata
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note          Note?       @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@map("highlights")
+  @@index([userId])
+  @@index([workTitle, chapterTitle])
+}
+
+// Reading progress tracking
+model ReadingProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  
+  // Location
+  workTitle     String
+  partTitle     String?
+  chapterTitle  String
+  
+  // Progress info
+  scrollPosition Float?  // Percentage scrolled through the chapter
+  lastReadAt     DateTime @default(now())
+  timeSpent      Int      @default(0) // Time spent in minutes
+  
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_progress")
+  @@unique([userId, workTitle, chapterTitle])
+  @@index([userId])
+}
+
+// Study sessions for tracking reading habits
+model StudySession {
+  id          String   @id @default(cuid())
+  userId      String
+  
+  // Session details
+  startTime   DateTime
+  endTime     DateTime?
+  totalTime   Int?     // Duration in minutes
+  
+  // Content covered
+  worksStudied String   @default("[]") // JSON string of work titles studied in this session
+  notesCreated Int      @default(0)
+  highlightsMade Int    @default(0)
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("study_sessions")
+  @@index([userId])
+}
+
+
+// Enums
+enum NoteType {
+  GENERAL     // General note
+  QUESTION    // Question for further study
+  INSIGHT     // Personal insight or revelation
+  CROSS_REF   // Cross-reference to other texts
+  PRAYER      // Prayer or spiritual reflection
+  COMMENTARY  // Commentary or explanation
+}
+
+enum HighlightColor {
+  YELLOW
+  BLUE  
+  GREEN
+  PINK
+  ORANGE
+  PURPLE
+  RED
+}
