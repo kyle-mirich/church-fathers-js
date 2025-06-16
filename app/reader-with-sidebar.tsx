@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { BookOpen, ChevronRight, ChevronDown, Settings, Search, X, Sun, Moon, Type, Minus, Plus, FileText, ArrowRight } from "lucide-react"
+import { BookOpen, ChevronRight, ChevronDown, Settings, Search, X, Sun, Moon, Type, Minus, Plus, FileText, ArrowRight, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 // Re-use the sidebar primitives that already exist in the UI library.
 import {
@@ -667,6 +667,23 @@ export default function ReaderWithSidebar() {
   const [selectedWorkData, setSelectedWorkData] = useState<any | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Load sidebar preference on mount
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem("sidebar-collapsed")
+    if (savedCollapsed) {
+      setSidebarCollapsed(JSON.parse(savedCollapsed))
+    }
+  }, [])
+
+  // Save sidebar preference
+  const toggleSidebar = () => {
+    const newCollapsed = !sidebarCollapsed
+    setSidebarCollapsed(newCollapsed)
+    localStorage.setItem("sidebar-collapsed", JSON.stringify(newCollapsed))
+  }
 
   // Fetch the works index on mount
   useEffect(() => {
